@@ -88,6 +88,11 @@ namespace Equin.ApplicationFramework
         /// in FilterAndSort().
         /// </summary>
         private Dictionary<T, ObjectView<T>> _objectViewCache;
+        /// <summary>
+        /// Controls whether or not the view is automatically re-filtered and re-sorted when
+        /// source lists change.
+        /// </summary>
+        private bool _autoFilterAndSortSuspended;
 
         #endregion
         
@@ -369,7 +374,10 @@ namespace Equin.ApplicationFramework
                 // then we must force the update ourselves.
                 if (!(_newItemsList is IBindingList) || !(_newItemsList as IBindingList).SupportsChangeNotification)
                 {
-                    FilterAndSort();
+                    if (!_autoFilterAndSortSuspended)
+                    {
+                        FilterAndSort();
+                    }
                     OnListChanged(ListChangedType.Reset, -1);
                 }
 
@@ -426,6 +434,16 @@ namespace Equin.ApplicationFramework
             {
                 _synchronizingObject = value;
             }
+        }
+
+        public void SuspendAutoFilterAndSort()
+        {
+            _autoFilterAndSortSuspended = true;
+        }
+
+        public void ResumeAutoFilterAndSort()
+        {
+            _autoFilterAndSortSuspended = false;
         }
 
         /// <summary>
@@ -532,6 +550,11 @@ namespace Equin.ApplicationFramework
         /// <param name="sender">The <see cref="ObjectView&lt;T&gt;"/> that raised the event.</param>
         protected virtual void EndedItemEdit(object sender, EventArgs e)
         {
+            if (_autoFilterAndSortSuspended) 
+            {
+                return;
+            }
+
             ObjectView<T> editableObject = (ObjectView<T>)sender;
             
             // Check if filtering removed the item from view
@@ -579,8 +602,11 @@ namespace Equin.ApplicationFramework
                     (list as IBindingList).ListChanged += new ListChangedEventHandler(SourceListChanged);
                 }
                 _savedSourceLists.Add(list);
-                FilterAndSort();
-                OnListChanged(ListChangedType.Reset, -1);
+                if (!_autoFilterAndSortSuspended)
+                {
+                    FilterAndSort();
+                    OnListChanged(ListChangedType.Reset, -1);
+                }
             }
             else if (e.ListChangedType == ListChangedType.ItemDeleted)
             {
@@ -592,15 +618,21 @@ namespace Equin.ApplicationFramework
                         (list as IBindingList).ListChanged -= new ListChangedEventHandler(SourceListChanged);
                     }
                     _savedSourceLists.RemoveAt(e.NewIndex);
-                    FilterAndSort();
-                    OnListChanged(ListChangedType.Reset, -1);
+                    if (!_autoFilterAndSortSuspended)
+                    {
+                        FilterAndSort();
+                        OnListChanged(ListChangedType.Reset, -1);
+                    }
                 }
             }
             else if (e.ListChangedType == ListChangedType.Reset)
             {
                 BuildSavedList();
-                FilterAndSort();
-                OnListChanged(ListChangedType.Reset, -1);
+                if (!_autoFilterAndSortSuspended)
+                {
+                    FilterAndSort();
+                    OnListChanged(ListChangedType.Reset, -1);
+                }
             }
         }
 
@@ -609,6 +641,11 @@ namespace Equin.ApplicationFramework
         /// </summary>
         private void SourceListChanged(object sender, ListChangedEventArgs e)
         {
+            if (_autoFilterAndSortSuspended)
+            {
+                return;
+            }
+
             int oldIndex;
             int newIndex;
             IBindingList sourceList = sender as IBindingList;
@@ -1981,20 +2018,17 @@ namespace Equin.ApplicationFramework
             }
 
             List<PropertyDescriptor> newProps = new List<PropertyDescriptor>();
-            foreach (PropertyDescriptor pd in originalProps)
+            foreach (PropertyDescriptor pd in AddProvidedViews(originalProps))
             {
                 newProps.Add(pd);
             }
-            foreach (PropertyDescriptor pd in GetProvidedViews(originalProps))
-            {
-                newProps.Add(pd);                
-            }
+            
             return new PropertyDescriptorCollection(newProps.ToArray());
         }
 
         protected internal bool ShouldProvideView(PropertyDescriptor property)
         {
-            return ProvidedViewPropertyDescriptor<T>.CanProvideViewOf(property);
+            return ProvidedViewPropertyDescriptor.CanProvideViewOf(property);
         }
 
         protected internal string GetProvidedViewName(PropertyDescriptor sourceListProperty)
@@ -2029,16 +2063,20 @@ namespace Equin.ApplicationFramework
             return viewType;
         }
 
-        private IEnumerable<PropertyDescriptor> GetProvidedViews(PropertyDescriptorCollection properties)
+        internal IEnumerable<PropertyDescriptor> AddProvidedViews(PropertyDescriptorCollection properties)
         {
-            int count = properties.Count;
-            for (int i = 0; i < count; i++)
+            if (properties.Count < 0)
             {
-                if (ShouldProvideView(properties[i]))
+                yield break;
+            }
+            foreach (PropertyDescriptor prop in properties)
+            {
+                if (ShouldProvideView(prop))
                 {
-                    string name = GetProvidedViewName(properties[i]);
-                    yield return new ProvidedViewPropertyDescriptor<T>(name, GetProvidedViewType(properties[i]));
+                    string name = GetProvidedViewName(prop);
+                    yield return new ProvidedViewPropertyDescriptor(name, GetProvidedViewType(prop));
                 }
+                yield return prop;
             }
         }
 
