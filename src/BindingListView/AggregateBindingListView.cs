@@ -9,7 +9,7 @@ using System.Diagnostics;
 
 namespace Equin.ApplicationFramework
 {
-    public class AggregateBindingListView<T> : Component, IBindingListView, IList, IRaiseItemChangedEvents, ICancelAddNew, ITypedList
+    public class AggregateBindingListView<T> : Component, IBindingListView, IList, IRaiseItemChangedEvents, ICancelAddNew, ITypedList, IEnumerable<T>
     {
         #region Constructors
 
@@ -1970,7 +1970,14 @@ namespace Equin.ApplicationFramework
 
         #endregion
 
-        #region IEnumerable Members
+        #region IEnumerable<T> Members
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            for (int i = 0; i < _sourceIndices.Count; i++)
+                yield return _sourceIndices[i].Key.Item.Object;
+
+        }
 
         /// <summary>
         /// Returns an enumerator that iterates through all the <see cref="ObjectView&lt;T&gt;"/> items in the view.
