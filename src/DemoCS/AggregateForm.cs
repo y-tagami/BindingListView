@@ -29,7 +29,6 @@ namespace Demo
             string[] urls = { 
                 "http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/front_page/rss.xml", 
                 "http://channel9.msdn.com/rss.aspx",
-                "http://msdn.microsoft.com/rss.xml"
             };
             
             foreach (string url in urls)
