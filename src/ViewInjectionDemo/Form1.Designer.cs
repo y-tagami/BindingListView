@@ -162,7 +162,6 @@ namespace Equin.ApplicationFramework.Demos.ViewInjectionDemo
         private System.Windows.Forms.DataGridView customerDataGridView;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
         private System.Windows.Forms.DataGridView dataGridView1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn detailsDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn iDDataGridViewTextBoxColumn;
         private System.Windows.Forms.BindingSource ordersBindingSource;
         private System.Windows.Forms.Button button1;
