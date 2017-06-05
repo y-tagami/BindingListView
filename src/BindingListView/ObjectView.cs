@@ -151,7 +151,7 @@ namespace Equin.ApplicationFramework
         {
             foreach (PropertyDescriptor prop in (this as ICustomTypeDescriptor).GetProperties())
             {
-                if (ShouldProvideViewOf(prop))
+                if (ShouldProvideViewOf(prop) && prop.GetValue(this) != null)
                 {
                     object view = _parent.CreateProvidedView(this, prop);
                     string viewName = GetProvidedViewName(prop);
