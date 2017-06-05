@@ -502,7 +502,17 @@ namespace Equin.ApplicationFramework
             // If we have sorts to apply, do them now
             if (_comparer != null)
             {
-                newList.Sort(_comparer);
+                if (_comparer.GetType() == typeof(SortComparer) )
+                {
+                    if ((_comparer as SortComparer)._comparisons.Count > 0)
+                    {
+                        newList.Sort(_comparer);
+                    }
+                }
+                else
+                {
+                    newList.Sort(_comparer);
+                }
             }
 
             // Now we can append any new items to the end of the view.
@@ -1215,7 +1225,7 @@ namespace Equin.ApplicationFramework
         /// </summary>
         private class SortComparer : IComparer<KeyValuePair<ListItemPair<T>, int>>
         {
-            private Dictionary<ListSortDescription, Comparison<T>> _comparisons;
+            internal Dictionary<ListSortDescription, Comparison<T>> _comparisons;
 
             /// <summary>
             /// Creates a new SortComparer that will use the given sorts.

@@ -69,5 +69,10 @@ namespace Demo
                 }
             );
         }
+
+        private void remove_sort_Click(object sender, EventArgs e)
+        {
+            itemsView.RemoveSort();
+        }
     }
 }
